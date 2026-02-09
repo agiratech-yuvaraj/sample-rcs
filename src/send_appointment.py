@@ -1,6 +1,7 @@
 import os
 import logging
 from flask import Flask, request
+import json
 from twilio.rest import Client
 from dotenv import load_dotenv
 
@@ -41,7 +42,7 @@ TEMPLATES = {
     'step_1_ad': 'HX4d21f40a4db16df1b477561c66e8f188',        # Health Advice Card
     'step_2_suggest': 'HX61c1303f5517919801c31977e656a9e5',   # Suggest Slot Card/Chips
     'step_3_carousel': 'HX416c65202749e54a269c8b77b8f19ed4',  # Alternative Slots Carousel
-    'step_4_confirm': 'HXea37806b19edf5a4c0da120383049faa'    # Final Confirmation Card
+    'step_4_confirm': 'HX92aa35c43fa6506a684f35496ce79856'    # Final Confirmation Card
 }
 
 try:
@@ -103,8 +104,17 @@ def webhook():
 
     # Transition: Step 3 -> Step 4 (User selects a slot from Carousel)
     # Note: Use the exact button labels you typed in your Carousel template
-    elif "Select" in user_response or "2:00 PM" in user_response:
-        send_rcs_template(user_phone, TEMPLATES['step_4_confirm'])
+    elif "Select" in user_response or "PM" in user_response or "AM" in user_response:
+        # Extract time from response (e.g., "Select 2:00 PM" -> "2:00 PM")
+        # specific logic depends on what the button text actually is. 
+        # If button is just "2:00 PM", then user_response is "2:00 PM".
+        selected_time = user_response.replace("Select ", "").strip()
+        
+        # Determine the variable value for {{1}}
+        # We'll use the selected_time directly.
+        variables = json.dumps({"1": selected_time})
+
+        send_rcs_template(user_phone, TEMPLATES['step_4_confirm'], variables=variables)
 
     return "OK", 200
 
